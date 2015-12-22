@@ -22,8 +22,8 @@ import parser.dataobjects.B00Data;
 import parser.dataobjects.B00Measure;
 import parser.dataobjects.B00Pattern;
 import parser.dataobjects.BinaryData;
-import parser.dataobjects.PatternIdent;
 import parser.dataobjects.BinaryData.Condition;
+import parser.dataobjects.PatternIdent;
 import parser.util.LogUtil;
 
 import com.google.common.base.Function;
@@ -45,19 +45,19 @@ public class B00Parser {
 
 		int modelByte = and7F(header.get(5));
 		ElectoneModel model = ElectoneModel.getModel(modelByte);
-		System.out.println(model.toString());
+		LogUtil.log(model.toString());
 
 		int dataKindByte = and7F(header.get(4));
 		DataKind dataKind = DataKind.get(dataKindByte);
 
 		B00Data parseBulkdump = null;
 		if (DataKind.BULKDUMP.equals(dataKind)) {
-			System.out.println("BULKDUMP");
+			LogUtil.log("BULKDUMP");
 			parseBulkdump = parseBulkdump(data);
 		}
 
 		if (DataKind.REGISTRATION.equals(dataKind)) {
-			System.out.println("REG (NIY)");
+			LogUtil.log("REG (NIY)");
 		}
 		return parseBulkdump;
 	}
@@ -69,7 +69,7 @@ public class B00Parser {
 		while (nextBulkdumpBlock.isPresent()) {
 			nextBulkdumpBlock = handleBulkdump(nextBulkdumpBlock.get(), b00data);
 		}
-		System.out.println("bulkdump end");
+		LogUtil.log("bulkdump end");
 		return b00data;
 	}
 
@@ -78,7 +78,7 @@ public class B00Parser {
 		if (blindTestKind == BlockKind.END_BULK_BLOCK) {
 			return Optional.absent();
 		}
-		System.out.println("bulkdump block");
+		LogUtil.log("bulkdump block");
 
 		BinaryData head = data.getHead(BULK_DUMP_BLOCK_HEADER_LENGTH);
 		assertBulkdumpBlockHeader(head);
@@ -102,8 +102,8 @@ public class B00Parser {
 		blockHeader.nameValue(1, "unknown");
 		blockHeader.nameValue(2, "blocklength least sign bit");
 		blockHeader.nameValue(3, "blocklength most sign bit");
-		blockHeader.assertMatch(4, 0x00);
-		blockHeader.assertMatch(5, 0x00);
+		blockHeader.assertMatch(4, 0x00, "should be zero");
+		blockHeader.assertMatch(5, 0x00, "should be zero");
 	}
 
 	private BlockKind getBlockKindFromblockHeader(BinaryData head) {
@@ -116,25 +116,25 @@ public class B00Parser {
 
 	private void parseBlocks(BinaryData bulkdumpBlock, BlockKind kind, B00Data b00data) {
 		if (BlockKind.REG_BLOCK.equals(kind)) {
-			System.out.println("REG");
+			LogUtil.log("REG BLOCK");
 		} else if (BlockKind.VOICE_BLOCK.equals(kind)) {
-			System.out.println("VOICE");
+			LogUtil.log("VOICE BLOCK");
 		} else if (BlockKind.FLUTE_BLOCK.equals(kind)) {
-			System.out.println("FLUTE");
+			LogUtil.log("FLUTE BLOCK");
 		} else if (BlockKind.PATTERN_BLOCK.equals(kind)) {
-			System.out.println("PATTERN");
-			System.out.println(bulkdumpBlock);
+			LogUtil.log("PATTERN BLOCK");
 			List<B00Pattern> parsePatternBlock = parsePatternBlock(bulkdumpBlock);
 			b00data.setPatterns(parsePatternBlock);
 
 		} else if (BlockKind.SEQUENCE_BLOCK.equals(kind)) {
-			System.out.println("SEQUENCE");
+			LogUtil.log("SEQUENCE BLOCK");
 		} else {
-			System.out.println("unknown block");
+			LogUtil.log("!! UNKNOWN BLOCK");
 		}
 	}
 
 	private List<B00Pattern> parsePatternBlock(BinaryData patternBlock) {
+		// TODO I dont know why there is this additional 2
 		patternBlock.assertMinSize(PATTERN_LENGTH + 2);
 
 		BinaryData patterns8with5Variations = patternBlock.getHead(ALL_PATTERNS_COUNT * SINGLE_PATTERN_LENGTH);
@@ -152,9 +152,9 @@ public class B00Parser {
 	}
 
 	private void compareSizes(int dataLength, int dataSize) {
-		System.out.println(String.format("calc length/taillength %d %d", dataLength, dataSize));
+		LogUtil.log(String.format("calc length/taillength %d %d", dataLength, dataSize));
 
-		// TODO I dont know why...
+		// TODO I dont know why there is this additional 2
 		if (dataLength + 2 != dataSize) {
 			throw new RuntimeException("TODO");
 		}
@@ -167,7 +167,7 @@ public class B00Parser {
 			List<B00Measure> measures1 = parseMeasures(rawMeasures1);
 			pattern.setMeasures1(measures1);
 
-			// System.out.println(measures1);
+			// LogUtil.log(measures1);
 			// HexPrintUtil.printMeasures(measures1);
 
 			int offsetMeasure2 = pattern.getOffsetMeasure2();
@@ -175,31 +175,34 @@ public class B00Parser {
 			List<B00Measure> measures2 = parseMeasures(rawMeasures2);
 			pattern.setMeasures2(measures2);
 
-			// System.out.println(measures2);
+			// LogUtil.log(measures2);
 			// HexPrintUtil.printMeasures(measures2);
-			// System.out.println(pattern.toString());
+			// LogUtil.log(pattern.toString());
 		}
 
 	}
 
+	/**
+	 * rawMeasures layout:
+	 * [1 byte time code] [1 byte instrument and volume ]* [0xFF]
+	 * time code: 80=1 88=1.08 88=2
+	 * instrument and volume: 0VVVIIII V=Volume I=Instrument
+	 * end marker: 0xFF;
+	 */
 	private List<B00Measure> parseMeasures(BinaryData rawMeasures) {
-		// layout:
-		// [1 byte time code] [1 byte instrument and volume ]* [0xFF]
-		// time code: 1 80=1 88=1.08 88=2
-		// channel volume: 0VVVIIII
-
-		LogUtil.log("rawMeasures:\n%s", rawMeasures);
+		LogUtil.logDebug(rawMeasures, "rawMeasures");
 
 		Condition isMeasureData = x -> (x & Constants.PATTERN_MEASURES_IS_MEASURE_MASK) > 0;
-		List<BinaryData> measureAndInstrumentsList = rawMeasures.chunksStartingWith(isMeasureData);
+		List<BinaryData> measuresAndInstrumentsList = rawMeasures.chunksStartingWith(isMeasureData);
 
-		LogUtil.log("rawMeasures splitted:\n%s", measureAndInstrumentsList);
+		LogUtil.logDebug(measuresAndInstrumentsList, "rawMeasures splitted");
 
 		List<B00Measure> measures = Lists.newArrayList();
-		for (BinaryData measureByteAndInstrumentsBytes : measureAndInstrumentsList) {
-			// TODO handle empty
-			if (measureByteAndInstrumentsBytes.get(0) == 0xFF) {
-				System.out.println("END!! " + measureByteAndInstrumentsBytes.size());
+		for (BinaryData measureByteAndInstrumentsBytes : measuresAndInstrumentsList) {
+			if (measureByteAndInstrumentsBytes.isEmpty()) {
+				LogUtil.logWarn("Empty measure should not happen." + measureByteAndInstrumentsBytes.getDebugInfo());
+			} else if (measureByteAndInstrumentsBytes.get(0) == 0xFF) {
+				// TODO we should be done. check and throw exceptions on unexpected input.
 				continue;
 			}
 			B00Measure measure = parseMeasure(measureByteAndInstrumentsBytes);
@@ -209,18 +212,21 @@ public class B00Parser {
 		return measures;
 	}
 
-	private B00Measure parseMeasure(BinaryData measureAndInstruments) {
-		if (measureAndInstruments.size() < 2) {
-			System.out.println("Value:" + measureAndInstruments.get(0));
-			throw new RuntimeException("We expect at least one channel for this measure, but got only the measure.");
+	private B00Measure parseMeasure(BinaryData measureByteAndInstrumentsBytes) {
+		if (measureByteAndInstrumentsBytes.size() < 1) {
+			throw new RuntimeException("Got empty measure data!");
+		} else if (measureByteAndInstrumentsBytes.size() < 2) {
+			LogUtil.logWarn(
+					"Strange: This measure contains no instrument data. We expect at least one instrument to play for this measure. measure byte: %d",
+					measureByteAndInstrumentsBytes.get(0));
 		}
 
-		int rawMeasure = measureAndInstruments.get(0);
+		int rawMeasure = measureByteAndInstrumentsBytes.get(0);
 		// int measure24s = (rawMeasure & 0x7F) - 0x80;
 		int measure24s = rawMeasure - 0x80;
 		B00Measure measure = new B00Measure(measure24s);
-		for (int i = 1; i < measureAndInstruments.size(); i++) {
-			int instrumentAndAccent = measureAndInstruments.get(i);
+		for (int i = 1; i < measureByteAndInstrumentsBytes.size(); i++) {
+			int instrumentAndAccent = measureByteAndInstrumentsBytes.get(i);
 			int channel = instrumentAndAccent & Constants.PATTERN_NOTE_CHANNEL_MASK;
 			int accent = instrumentAndAccent & Constants.PATTERN_NOTE_ACCENT_MASK;
 			measure.addNote(channel, accent);
@@ -235,7 +241,9 @@ public class B00Parser {
 		List<PatternIdent> orderedPatternIdents = createOrderedPatternIdents();
 
 		if (patternHeaders.size() != ALL_PATTERNS_COUNT || orderedPatternIdents.size() != ALL_PATTERNS_COUNT) {
-			throw new RuntimeException("TODO");
+			throw new ParserException(
+					"We got %d pattern headers and expected %d and got %d patternIdents and expected %d.",
+					patternHeaders.size(), ALL_PATTERNS_COUNT, orderedPatternIdents.size(), ALL_PATTERNS_COUNT);
 		}
 
 		List<B00Pattern> patterns = Lists.newArrayList();
@@ -309,11 +317,11 @@ public class B00Parser {
 	// #16+3 Offset 2: first start position ??
 	// #16+4 Unknown value ??
 	private void parse_single_pattern(List<Integer> chunk, int patternNumber, PatternVariation patternVariation) {
-		System.out.println("pattern");
+		LogUtil.log("pattern");
 	}
 
 	private void parse_single_measure(List<Integer> measureData, int patternNumber, PatternVariation patternVariation) {
-		System.out.println("measure");
+		LogUtil.log("measure");
 	}
 
 	private String join(List<Integer> unknownGap) {

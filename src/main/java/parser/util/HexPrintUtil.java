@@ -1,10 +1,15 @@
 package parser.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class HexPrintUtil {
 	final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
+
+	public static String toHex(Integer b) {
+		return bytesToHex(Arrays.asList(b));
+	}
 
 	public static String bytesToHex(List<Integer> bytes) {
 		// we use ints, so values greater 0xFF will be shown truncated

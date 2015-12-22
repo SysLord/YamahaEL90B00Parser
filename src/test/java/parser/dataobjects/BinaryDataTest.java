@@ -6,7 +6,6 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import parser.dataobjects.BinaryData;
 import parser.dataobjects.BinaryData.Condition;
 
 public class BinaryDataTest {
@@ -19,8 +18,8 @@ public class BinaryDataTest {
 		List<Integer> asList = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 0xFF, 9, 10, 11, 12, 0xFF);
 		BinaryData binaryData = new BinaryData(asList);
 
-		Assert.assertEquals(BinaryData.create(0, 1, 2, 3, 4, 5, 6, 7), binaryData.getFromIndexUntil(0, 0xFF));
-		Assert.assertEquals(BinaryData.create(6, 7), binaryData.getFromIndexUntil(6, 0xFF));
+		Assert.assertEquals(BinaryData.create(0, 1, 2, 3, 4, 5, 6, 7), binaryData.getFromIndexUntilExcluding(0, 0xFF));
+		Assert.assertEquals(BinaryData.create(6, 7), binaryData.getFromIndexUntilExcluding(6, 0xFF));
 	}
 
 	@Test

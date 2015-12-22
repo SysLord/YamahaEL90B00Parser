@@ -8,8 +8,12 @@ import parser.dataobjects.B00Pattern;
 import parser.dataobjects.PatternIdent;
 import electone.dataobjects.Pattern;
 
+/**
+ * Convert B00File pattern to more usable Pattern object.
+ */
 public class PatternConverter {
 
+	// Work in progress
 	public Pattern toBusiness(B00Data b00Data) {
 		Pattern pattern = new Pattern();
 
@@ -26,7 +30,6 @@ public class PatternConverter {
 
 		}
 
-		// TODO Auto-generated method stub
 		return null;
 	}
 }

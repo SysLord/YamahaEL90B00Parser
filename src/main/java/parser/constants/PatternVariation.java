@@ -3,6 +3,9 @@ package parser.constants;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Each rhythm pattern has 4 variations and a fill in, which counts as fifth variation.
+ */
 public enum PatternVariation {
 
 	A(0), B(1), C(2), D(3), FILL_IN(100);

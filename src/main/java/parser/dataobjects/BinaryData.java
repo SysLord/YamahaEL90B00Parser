@@ -6,7 +6,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import parser.ParserException;
 import parser.util.HexPrintUtil;
+import parser.util.LogUtil;
 
 import com.google.common.collect.Lists;
 
@@ -17,6 +19,7 @@ public class BinaryData {
 	}
 
 	private List<Integer> data;
+	private String debugInfo = "unknown chunk";
 
 	public BinaryData(List<Integer> data) {
 		this.data = data;
@@ -51,10 +54,6 @@ public class BinaryData {
 		return data.subList(0, headerLength);
 	}
 
-	public void assertMatch(int index, int value) {
-		assertMatch(index, value, "don't know");
-	}
-
 	public void assertMatch(int index, int value, String reason) {
 		if (get(index) != value) {
 			throw new RuntimeException(reason);
@@ -68,7 +67,7 @@ public class BinaryData {
 		}
 		int num = and7F(expectedSum + actualSum);
 		if (num != 0x7F) {
-			throw new RuntimeException("Checksum");
+			throw new ParserException("Checksum bad");
 		}
 	}
 
@@ -76,13 +75,17 @@ public class BinaryData {
 		return data;
 	}
 
+	/**
+	 * Does nothing meaningful. Logs the value with its name.
+	 */
 	public void nameValue(int index, String valueName) {
-		// System.out.println(String.format("%d = %s", index, valueName));
+		LogUtil.log(data.get(index), valueName);
 	}
 
 	public void assertMinSize(int minSize) {
 		if (data.size() < minSize) {
-			throw new RuntimeException("TODO");
+			throw new ParserException("%s is smaller %d than expected minsize %d.", getDebugInfo(), data.size(),
+					minSize);
 		}
 	}
 
@@ -97,7 +100,8 @@ public class BinaryData {
 
 	public List<BinaryData> getEquallySizedChunks(int chunkSize) {
 		if (data.size() % chunkSize != 0) {
-			throw new RuntimeException("TODO");
+			throw new ParserException("%s cannot be split in %d-sized chunks, because size %d is not devidable.",
+					getDebugInfo(), chunkSize, data.size());
 		}
 
 		List<List<Integer>> partition = Lists.partition(data, chunkSize);
@@ -105,22 +109,13 @@ public class BinaryData {
 		return collect;
 	}
 
-	public BinaryData getFromIndexUntil(int startIndex, int untilValue) {
+	public BinaryData getFromIndexUntilExcluding(int startIndex, int untilValue) {
 		BinaryData tail = getTail(startIndex);
 		int indexOf = tail.indexOf(untilValue);
 		if (indexOf >= 0) {
 			return tail.getRange(0, indexOf);
 		}
-		throw new RuntimeException("TODO");
-	}
-
-	// @VisibleForTesting
-	// protected BinaryData tail(int startIndex) {
-	// return data.subList(startIndex, data.size());
-	// }
-
-	private int indexOf(int value) {
-		return data.indexOf(Integer.valueOf(value));
+		throw new ParserException("%s not found in %s", HexPrintUtil.toHex(untilValue), getDebugInfo());
 	}
 
 	public BinaryData getFromIndexUntilIncluding(int startIndex, int untilValue) {
@@ -129,7 +124,11 @@ public class BinaryData {
 		if (indexOf >= 0) {
 			return tail.getRange(0, indexOf + 1);
 		}
-		throw new RuntimeException("TODO");
+		throw new ParserException("%s not found in %s", HexPrintUtil.toHex(untilValue), getDebugInfo());
+	}
+
+	private int indexOf(int value) {
+		return data.indexOf(Integer.valueOf(value));
 	}
 
 	public List<BinaryData> chunksStartingWith(Condition condition) {
@@ -188,6 +187,18 @@ public class BinaryData {
 			return false;
 		}
 		return true;
+	}
+
+	public boolean isEmpty() {
+		return data.isEmpty();
+	}
+
+	public String getDebugInfo() {
+		return debugInfo;
+	}
+
+	public void setDebugInfo(String debugInfo) {
+		this.debugInfo = debugInfo;
 	}
 
 }
