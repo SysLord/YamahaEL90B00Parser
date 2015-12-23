@@ -1,6 +1,8 @@
-package parser.dataobjects;
+package electone.dataobjects;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import parser.constants.PatternVariation;
 
@@ -27,11 +29,10 @@ public class PatternIdent {
 	}
 
 	public static List<PatternIdent> createFillIns(int patternsCount) {
-		List<PatternIdent> l = Lists.newArrayList();
-		for (int patternIndex = 0; patternIndex < patternsCount; patternIndex++) {
-			l.add(new PatternIdent(patternIndex, PatternVariation.FILL_IN));
-		}
-		return l;
+		return IntStream.range(0, patternsCount)
+				.boxed()
+				.map(patternIndex -> new PatternIdent(patternIndex, PatternVariation.FILL_IN))
+				.collect(Collectors.toList());
 	}
 
 	@Override
@@ -45,6 +46,36 @@ public class PatternIdent {
 
 	public PatternVariation getVariation() {
 		return variation;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + patternIndex;
+		result = prime * result + ((variation == null) ? 0 : variation.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		PatternIdent other = (PatternIdent) obj;
+		if (patternIndex != other.patternIndex) {
+			return false;
+		}
+		if (variation != other.variation) {
+			return false;
+		}
+		return true;
 	}
 
 }

@@ -10,6 +10,14 @@ public class Volume {
 		this.volume = volume;
 	}
 
+	public static Volume createSilent() {
+		return new Volume(0);
+	}
+
+	public static Volume of(int volume) {
+		return new Volume(volume);
+	}
+
 	public int getVolume() {
 		return volume;
 	}

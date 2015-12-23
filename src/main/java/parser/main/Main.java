@@ -13,6 +13,8 @@ import parser.util.LogUtil;
 
 import com.google.common.collect.Lists;
 
+import electone.dataobjects.Patterns;
+
 public class Main {
 
 	public static void main(String[] args) {
@@ -29,11 +31,12 @@ public class Main {
 			B00Parser parser = new B00Parser();
 			B00Data b00Data = parser.parse(binaryData);
 
-			LogUtil.log(b00Data, "TEST");
+			LogUtil.log(b00Data, "B00 object");
 
-			// PatternConverter converter = new PatternConverter();
+			PatternConverter converter = new PatternConverter();
 
-			// Pattern p = converter.toBusiness(b00Data);
+			Patterns ps = converter.toBusiness(b00Data);
+			LogUtil.log(ps, "===== RESULT =====");
 
 		} catch (IOException e) {
 			e.printStackTrace();

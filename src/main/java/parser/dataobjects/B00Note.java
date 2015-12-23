@@ -1,11 +1,11 @@
 package parser.dataobjects;
 
-public class Note {
+public class B00Note {
 
 	private int channel;
 	private int accent;
 
-	public Note(int channel, int accent) {
+	public B00Note(int channel, int accent) {
 		this.channel = channel;
 		this.accent = accent;
 	}
@@ -13,5 +13,13 @@ public class Note {
 	@Override
 	public String toString() {
 		return String.format("%d (%d)", channel, accent);
+	}
+
+	public int getChannel() {
+		return channel;
+	}
+
+	public int getAccent() {
+		return accent;
 	}
 }

@@ -1,10 +1,9 @@
 package electone.dataobjects;
 
-import java.util.List;
+import java.util.Map;
+import java.util.stream.IntStream;
 
 import parser.constants.DrumInstrument;
-
-import com.google.common.collect.Lists;
 
 public class TrackPattern {
 
@@ -12,12 +11,21 @@ public class TrackPattern {
 
 	private CountQuantization quantization;
 
-	private List<Volume> pattern;
+	private Map<Measure, Volume> countVolumes;
 
-	public TrackPattern(DrumInstrument instrument, CountQuantization quantization, List<Volume> pattern) {
+	public TrackPattern(DrumInstrument instrument, CountQuantization quantization, Map<Measure, Volume> countVolumes) {
 		this.instrument = instrument;
 		this.quantization = quantization;
-		this.pattern = pattern;
+		this.countVolumes = countVolumes;
+		assureCounts();
+	}
+
+	private void assureCounts() {
+		IntStream.range(0, Pattern.MAX_PATTERN_LENGTH)
+		.boxed()
+		.map(measureValue -> Measure.of(measureValue))
+		.filter(measure -> !countVolumes.containsKey(measure))
+		.forEach(measure -> countVolumes.put(measure, Volume.createSilent()));
 	}
 
 	public DrumInstrument getInstrument() {
@@ -36,18 +44,7 @@ public class TrackPattern {
 		return quantization;
 	}
 
-	public Volume getCount(int count) {
-		return pattern.get(count);
-	}
-
-	public static List<Volume> createEmptyPattern() {
-		// TODO dep cycle
-		int maxPatternLength = Pattern.MAX_PATTERN_LENGTH;
-
-		List<Volume> emptyPattern = Lists.newArrayListWithCapacity(maxPatternLength);
-		for (int index = 0; index < maxPatternLength; index++) {
-			emptyPattern.add(new Volume(0));
-		}
-		return emptyPattern;
+	public Volume getVolume(int count) {
+		return countVolumes.get(Measure.of(count));
 	}
 }

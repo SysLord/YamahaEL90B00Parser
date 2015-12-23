@@ -47,40 +47,41 @@ public enum DrumInstrument {
 	X43(43, "x43", "43.wav"),
 	X44(44, "x44", "44.wav"),
 	X45(45, "Große Trommel?", "45.wav"),
-	X45_1(46, "Synth Base?", "45_1.wav"),
-	X46(47, "Synth Base?", "46.wav"),
-	X47(48, "Pauke", "47.wav"),
-	X48(49, "x48", "48.wav"),
-	X49(50, "Synth Tom?", "49.wav"),
-	X50(51, "x50", "50.wav"),
-	X51(52, "x51", "51.wav"),
-	X52(53, "x52", "52.wav"),
-	X53(54, "Snare Rim", "53.wav"),
-	X54(55, "Snare ?", "54.wav"),
-	X55(56, "Besen?", "55.wav"),
-	X56(57, "x56", "56.wav"),
-	X57(58, "x57", "57.wav"),
-	X58(59, "x58", "58.wav"),
-	X59(60, "x59", "59.wav"),
-	X60(61, "x60", "60.wav"),
-	X61(62, "Ride Cymbal", "61.wav"),
-	X62(63, "Tom", "62.wav"),
-	X63(64, "Ride Cymbal Glocke", "63.wav"),
-	X64(65, "Tom Hoch", "64.wav"),
-	X65(66, "Cymbal Crash?", "65.wav"),
-	X66(67, "x66", "66.wav"),
-	X67(68, "x67", "67.wav"),
-	X68(69, "x68", "68.wav"),
-	X69(70, "x69", "69.wav"),
-	X70(71, "x70", "70.wav"),
-	X71(72, "x71", "71.wav"),
-	X72(73, "x72", "72.wav"),
-	X73(74, "x73", "73.wav"),
-	X74(75, "x74", "74.wav"),
-	X75(76, "Guiro langsam", "75.wav"),
-	X76(77, "Scratch", "76.wav"),
-	X77(78, "Guiro schnell?", "77.wav"),
-	X78(79, "Synth Laser?", "78.wav");
+	X46(46, "Synth Base?", "46.wav"),
+	X47(47, "Synth Base?", "47.wav"),
+	X48(48, "Pauke", "48.wav"),
+	X49(49, "x48", "49.wav"),
+	X50(50, "Synth Tom?", "50.wav"),
+	X51(51, "x50", "51.wav"),
+	X52(52, "x51", "52.wav"),
+	X53(53, "x52", "53.wav"),
+	X54(54, "Snare Rim", "54.wav"),
+	X55(55, "Snare ?", "55.wav"),
+	X56(56, "Besen?", "56.wav"),
+	X57(57, "x56", "57.wav"),
+	X58(58, "x57", "58.wav"),
+	X59(59, "x58", "59.wav"),
+	X60(60, "x59", "60.wav"),
+	X61(61, "x60", "61.wav"),
+	X62(62, "Ride Cymbal", "62.wav"),
+	X63(63, "Tom", "63.wav"),
+	X64(64, "Ride Cymbal Glocke", "64.wav"),
+	X65(65, "Tom Hoch", "65.wav"),
+	X66(66, "Cymbal Crash?", "66.wav"),
+	X67(67, "x66", "67.wav"),
+	X68(68, "x67", "68.wav"),
+	X69(69, "x68", "69.wav"),
+	X70(70, "x69", "70.wav"),
+	X71(71, "x70", "71.wav"),
+	X72(72, "x71", "72.wav"),
+	X73(73, "x72", "73.wav"),
+	X74(74, "x73", "74.wav"),
+	X75(75, "x74", "75.wav"),
+	X76(76, "Guiro langsam", "76.wav"),
+	X77(77, "Scratch", "77.wav"),
+	X78(78, "Guiro schnell?", "78.wav"),
+	X79(79, "Synth Laser?", "79.wav"),
+	UNKNOWN(999, "UNKNOWN INSTRUMENT", "79.wav");
 
 	String name;
 
@@ -98,13 +99,13 @@ public enum DrumInstrument {
 		return name;
 	}
 
-	public static String getName(int idx) {
+	public static DrumInstrument getInstrument(int id) {
 		for (DrumInstrument v : values()) {
-			if (v.idx == idx) {
-				return v.getName();
+			if (v.idx == id) {
+				return v;
 			}
 		}
-		return "!!!! NOTFOUND";
+		return UNKNOWN;
 	}
 
 	public int getIdx() {

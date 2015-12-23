@@ -17,19 +17,17 @@ import parser.constants.BlockKind;
 import parser.constants.Constants;
 import parser.constants.DataKind;
 import parser.constants.ElectoneModel;
-import parser.constants.PatternVariation;
 import parser.dataobjects.B00Data;
 import parser.dataobjects.B00Measure;
 import parser.dataobjects.B00Pattern;
 import parser.dataobjects.BinaryData;
 import parser.dataobjects.BinaryData.Condition;
-import parser.dataobjects.PatternIdent;
 import parser.util.LogUtil;
 
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
+
+import electone.dataobjects.PatternIdent;
 
 public class B00Parser {
 
@@ -163,7 +161,7 @@ public class B00Parser {
 	private void parseMeasures(List<B00Pattern> patterns, BinaryData rawMeasureData) {
 		for (B00Pattern pattern : patterns) {
 			int offsetMeasure1 = pattern.getOffsetMeasure1();
-			BinaryData rawMeasures1 = rawMeasureData.getFromIndexUntilIncluding(offsetMeasure1, PATTERN_MEASURE_END);
+			BinaryData rawMeasures1 = rawMeasureData.getFromIndexUntilExcluding(offsetMeasure1, PATTERN_MEASURE_END);
 			List<B00Measure> measures1 = parseMeasures(rawMeasures1);
 			pattern.setMeasures1(measures1);
 
@@ -171,7 +169,7 @@ public class B00Parser {
 			// HexPrintUtil.printMeasures(measures1);
 
 			int offsetMeasure2 = pattern.getOffsetMeasure2();
-			BinaryData rawMeasures2 = rawMeasureData.getFromIndexUntilIncluding(offsetMeasure2, PATTERN_MEASURE_END);
+			BinaryData rawMeasures2 = rawMeasureData.getFromIndexUntilExcluding(offsetMeasure2, PATTERN_MEASURE_END);
 			List<B00Measure> measures2 = parseMeasures(rawMeasures2);
 			pattern.setMeasures2(measures2);
 
@@ -186,7 +184,7 @@ public class B00Parser {
 	 * rawMeasures layout:
 	 * [1 byte time code] [1 byte instrument and volume ]* [0xFF]
 	 * time code: 80=1 88=1.08 88=2
-	 * instrument and volume: 0VVVIIII V=Volume I=Instrument
+	 * instrument and volume: 0VVVCCCC V=Volume C=Channel
 	 * end marker: 0xFF;
 	 */
 	private List<B00Measure> parseMeasures(BinaryData rawMeasures) {
@@ -224,11 +222,12 @@ public class B00Parser {
 		int rawMeasure = measureByteAndInstrumentsBytes.get(0);
 		// int measure24s = (rawMeasure & 0x7F) - 0x80;
 		int measure24s = rawMeasure - 0x80;
+		// TODO measure sanity check
 		B00Measure measure = new B00Measure(measure24s);
 		for (int i = 1; i < measureByteAndInstrumentsBytes.size(); i++) {
-			int instrumentAndAccent = measureByteAndInstrumentsBytes.get(i);
-			int channel = instrumentAndAccent & Constants.PATTERN_NOTE_CHANNEL_MASK;
-			int accent = instrumentAndAccent & Constants.PATTERN_NOTE_ACCENT_MASK;
+			int ChannelAndAccent = measureByteAndInstrumentsBytes.get(i);
+			int channel = ChannelAndAccent & Constants.PATTERN_NOTE_CHANNEL_MASK;
+			int accent = ChannelAndAccent & Constants.PATTERN_NOTE_ACCENT_MASK;
 			measure.addNote(channel, accent);
 		}
 
@@ -251,12 +250,12 @@ public class B00Parser {
 			PatternIdent patternIdent = orderedPatternIdents.get(patternIndex);
 			BinaryData patternHeader = patternHeaders.get(patternIndex);
 
-			int measures = patternHeader.get(0) + 1;
+			int measureCount = patternHeader.get(0) + 1;
 			BinaryData channelInstruments = patternHeader.getRange(1, 16);
 			int offsetMeasure1 = patternHeader.get(17) + 256 * patternHeader.get(18) + 1;
 			int offsetMeasure2 = offsetMeasure1 + patternHeader.get(19);
 
-			B00Pattern pattern = new B00Pattern(patternIdent, measures, channelInstruments, offsetMeasure1,
+			B00Pattern pattern = new B00Pattern(patternIdent, measureCount, channelInstruments, offsetMeasure1,
 					offsetMeasure2);
 			patterns.add(pattern);
 		}
@@ -271,71 +270,6 @@ public class B00Parser {
 		orderedPatternIdents.addAll(variationsIdent);
 		orderedPatternIdents.addAll(fillInsIdent);
 		return orderedPatternIdents;
-	}
-
-	// TODO try, now that BinaryData bugs are fixed
-	/*
-	 * private void parsePattern(List<Integer> patternInfo, List<Integer> measureData) { int patternVariationsLength =
-	 * PATTERNS_COUNT * VARIATIONS_PER_PATTERN * SINGLE_PATTERN_LENGTH; int patternFillInsLength = PATTERNS_COUNT *
-	 * FILL_INS_PER_PATTERN * SINGLE_PATTERN_LENGTH; assertSize(patternInfo, patternVariationsLength +
-	 * patternFillInsLength);
-	 *
-	 * // List<Pattern> patterns = Lists.newArrayList(); // 8 Patterns (1-8), each 4 Variations (A,B,C,D) + 1 FillIn (F)
-	 * // # sets: 1A 1B 1C 1D 2A 2B 2C 2D ... 8D 1F 2F ... 8F // # We have 8 user patterns, each 4 variations in each.
-	 * // # Each pattern uses 1+15+5 bytes. // # The 8 fill ins are last.
-	 *
-	 * List<Integer> variationsInfo = head(patternInfo, patternVariationsLength);
-	 *
-	 * List<List<Integer>> variationsChunks = ByteUtil.sizedChunks(variationsInfo, PATTERN_LENGTH);
-	 * assertSize(variationsChunks, PATTERNS_COUNT * VARIATIONS_PER_PATTERN);
-	 *
-	 * for (int patternNumber = 0; patternNumber < PATTERNS_COUNT; patternNumber++) { Pattern pattern = new
-	 * Pattern(patternNumber); for (int variationNumber = 0; variationNumber < VARIATIONS_PER_PATTERN;
-	 * variationNumber++) { PatternVariation patternVariation = PatternVariation.get(variationNumber);
-	 * pattern.setVariation(patternVariation);
-	 *
-	 * parse_single_pattern(variationsChunks.get(patternNumber), patternNumber, patternVariation);
-	 * parse_single_measure(measureData, patternNumber, patternVariation); parse_single_measure(measureData,
-	 * patternNumber, patternVariation); } }
-	 *
-	 * List<Integer> fillinInfo = tail(patternInfo, patternVariationsLength); fillinInfo = head(fillinInfo,
-	 * patternFillInsLength); List<List<Integer>> fillinChunks = ByteUtil.sizedChunks(fillinInfo, PATTERN_LENGTH);
-	 * assertSize(fillinChunks, PATTERNS_COUNT * FILL_INS_PER_PATTERN);
-	 *
-	 * for (int patternNumber = 0; patternNumber < PATTERNS_COUNT; patternNumber++) { Pattern pattern = new
-	 * Pattern(patternNumber); pattern.setVariation(PatternVariation.FILL_IN);
-	 *
-	 * parse_single_pattern(fillinChunks.get(patternNumber), patternNumber, PatternVariation.FILL_IN);
-	 * parse_single_measure(measureData, patternNumber, PatternVariation.FILL_IN); parse_single_measure(measureData,
-	 * patternNumber, PatternVariation.FILL_IN); } }
-	 */
-
-	// #0 Time
-	// #1-16 instruments of 15 'levels' (16 * ?IIIIIII)
-	// #16+1 measure [16+1] * 265 [16+2] = offset from first position to beginning ??
-	// #16+2
-	// #16+3 Offset 2: first start position ??
-	// #16+4 Unknown value ??
-	private void parse_single_pattern(List<Integer> chunk, int patternNumber, PatternVariation patternVariation) {
-		LogUtil.log("pattern");
-	}
-
-	private void parse_single_measure(List<Integer> measureData, int patternNumber, PatternVariation patternVariation) {
-		LogUtil.log("measure");
-	}
-
-	private String join(List<Integer> unknownGap) {
-		List<String> hexStrings = Lists.transform(unknownGap, new Function<Integer, String>() {
-
-			@Override
-			public String apply(Integer input) {
-				return Integer.toHexString(input);
-			}
-
-		});
-		Joiner joiner = Joiner.on(", ");
-		String joined = joiner.join(hexStrings);
-		return joined;
 	}
 
 }

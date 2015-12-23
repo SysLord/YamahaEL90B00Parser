@@ -1,16 +1,15 @@
 package parser.dataobjects;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-import parser.constants.DrumInstrument;
+import electone.dataobjects.PatternIdent;
 import parser.util.HexPrintUtil;
 
 public class B00Pattern {
 
 	private PatternIdent patternIdent;
 
-	private int measures;
+	private int measureCount;
 
 	private BinaryData channelInstruments;
 
@@ -22,10 +21,10 @@ public class B00Pattern {
 
 	private List<B00Measure> parsedMeasures2;
 
-	public B00Pattern(PatternIdent patternIdent, int measures, BinaryData channelInstruments, int offsetMeasure1,
+	public B00Pattern(PatternIdent patternIdent, int measureCount, BinaryData channelInstruments, int offsetMeasure1,
 			int offsetMeasure2) {
 		this.patternIdent = patternIdent;
-		this.measures = measures;
+		this.measureCount = measureCount;
 		this.channelInstruments = channelInstruments;
 		this.offsetMeasure1 = offsetMeasure1;
 		this.offsetMeasure2 = offsetMeasure2;
@@ -33,16 +32,18 @@ public class B00Pattern {
 
 	@Override
 	public String toString() {
+		// TODO what a mess...
 		String instruments = HexPrintUtil.getHumandReadable(channelInstruments.getData());
 		String format = String.format("pattern %s\n" + "measures %d\noffsets %d %d\n" + "channelInstruments\n" + "%s",
-				patternIdent, measures, offsetMeasure1, offsetMeasure2, instruments);
+				patternIdent, measureCount, offsetMeasure1, offsetMeasure2, instruments);
 
-		String collect = channelInstruments.getData().stream().map(x -> DrumInstrument.getName(x))
-				.collect(Collectors.joining(", "));
+		// String collect = channelInstruments.getData().stream()
+		// .map(x -> DrumInstrument.getName(x))
+		// .collect(Collectors.joining(", "));
 
 		String measu = String.format("measures1:\n%s\nmeasures2\n%s\n", parsedMeasures1.toString(),
 				parsedMeasures2.toString());
-		return format + "\n" + collect + "\n" + measu;
+		return format + "\n" + "\n" + measu;
 	}
 
 	public PatternIdent getPatternIdent() {
@@ -50,7 +51,7 @@ public class B00Pattern {
 	}
 
 	public int getMeasures() {
-		return measures;
+		return measureCount;
 	}
 
 	public int getOffsetMeasure1() {
@@ -67,6 +68,18 @@ public class B00Pattern {
 
 	public void setMeasures2(List<B00Measure> parsedMeasures2) {
 		this.parsedMeasures2 = parsedMeasures2;
+	}
+
+	public List<B00Measure> getParsedMeasures1() {
+		return parsedMeasures1;
+	}
+
+	public List<B00Measure> getParsedMeasures2() {
+		return parsedMeasures2;
+	}
+
+	public List<Integer> getInstrumentsIds() {
+		return channelInstruments.getData();
 	}
 
 }

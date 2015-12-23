@@ -22,7 +22,11 @@ public class Pattern {
 	private List<TrackPattern> trackPatterns = new ArrayList<>(MAX_TRACKS);
 
 	public Pattern() {
+		//
+	}
 
+	public Pattern(List<TrackPattern> trackPatterns) {
+		this.trackPatterns = trackPatterns;
 	}
 
 	public void addTrack(TrackPattern track) {
@@ -37,7 +41,7 @@ public class Pattern {
 		Map<DrumInstrument, Volume> map = new HashMap<>();
 
 		for (TrackPattern trackPattern : trackPatterns) {
-			Volume volume = trackPattern.getCount(count);
+			Volume volume = trackPattern.getVolume(count);
 			DrumInstrument instrument = trackPattern.getInstrument();
 
 			if (volume.isSounding()) {
@@ -47,19 +51,19 @@ public class Pattern {
 		return map;
 	}
 
-	public static Pattern createEmptyPattern() {
-		Pattern pattern = new Pattern();
-
-		for (int trackCount = 0; trackCount < Pattern.MAX_TRACKS; trackCount++) {
-
-			CountQuantization countQuantization = trackCount % 2 == 0 ? CountQuantization.WHOLE
-					: CountQuantization.THIRDS;
-
-			List<Volume> trackPattern = TrackPattern.createEmptyPattern();
-			TrackPattern track = new TrackPattern(DrumInstrument.values()[trackCount], countQuantization, trackPattern);
-			pattern.addTrack(track);
-		}
-
-		return pattern;
-	}
+	// public static Pattern createEmptyPattern() {
+	// Pattern pattern = new Pattern();
+	//
+	// for (int trackCount = 0; trackCount < Pattern.MAX_TRACKS; trackCount++) {
+	//
+	// CountQuantization countQuantization = trackCount % 2 == 0 ? CountQuantization.WHOLE
+	// : CountQuantization.THIRDS;
+	//
+	// List<Volume> trackPattern = TrackPattern.createEmptyPattern();
+	// TrackPattern track = new TrackPattern(DrumInstrument.values()[trackCount], countQuantization, trackPattern);
+	// pattern.addTrack(track);
+	// }
+	//
+	// return pattern;
+	// }
 }
